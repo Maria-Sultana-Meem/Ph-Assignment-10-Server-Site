@@ -28,11 +28,7 @@ async function run() {
     const jobsCollection = db.collection('allJobs')
     const acceptCollection =db.collection('my-accepted-tasks')
 
-  app.post('/allJobs',async(req,res)=>{
-   const newJobs =  req.body
-        const result= await jobsCollection.insertOne(newJobs)
-        res.send(result)
-  })
+
   // get data
     app.get('/latest-jobs',async(req,res)=>{
       const result = await jobsCollection.find().sort({_id:-1}).limit(6).toArray()
@@ -54,11 +50,23 @@ async function run() {
     })
 
 //  post data
-    app.post('/my-accepted-task',async(req,res)=>{
-      const data=req.body
-      const result= await acceptCollection.insertOne(data)
-      res.send(result)
-    })
+   app.post('/my-accepted-task', async(req,res)=>{
+  const data = req.body
+  const result = await acceptCollection.insertOne(data)
+  res.send(result)
+})
+  app.post('/addJob',async(req,res)=>{
+   const newJobs =  req.body
+        const result= await jobsCollection.insertOne(newJobs)
+        res.send(result)
+  })
+
+// delete
+app.delete('/my-accepted-task/:id',async(req,res)=>{
+  const { id } = req.params;
+  const result = await acceptCollection.deleteOne({ _id: new ObjectId(id) })
+  res.send(result)
+})
 
     
     await client.db("admin").command({ ping: 1 });
