@@ -7,7 +7,7 @@ const port =process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x08ux7h.mongodb.net/?appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -24,14 +24,41 @@ async function run() {
     
     await client.connect();
 
+   const db = client.db('freelance_db')
+    const jobsCollection = db.collection('allJobs')
+    const acceptCollection =db.collection('my-accepted-tasks')
 
+  app.post('/allJobs',async(req,res)=>{
+   const newJobs =  req.body
+        const result= await jobsCollection.insertOne(newJobs)
+        res.send(result)
+  })
+  // get data
+    app.get('/latest-jobs',async(req,res)=>{
+      const result = await jobsCollection.find().sort({_id:-1}).limit(6).toArray()
+      res.send(result)
+    })
+    app.get('/allJobs',async(req,res)=>{
+      const result = await jobsCollection.find().toArray()
+      res.send(result)
+    })
+    app.get('/allJobs/:id',async(req,res)=>{
+      const {id}=req.params
+      const objectId = new ObjectId(id)
+      const result = await jobsCollection.findOne({ _id: objectId })
+      res.send(result)
+    })
+    app.get('/my-accepted-task',async(req,res)=>{
+      const result =await acceptCollection.find().toArray()
+      res.send(result)
+    })
 
-
-
-
-
-
-
+//  post data
+    app.post('/my-accepted-task',async(req,res)=>{
+      const data=req.body
+      const result= await acceptCollection.insertOne(data)
+      res.send(result)
+    })
 
     
     await client.db("admin").command({ ping: 1 });
