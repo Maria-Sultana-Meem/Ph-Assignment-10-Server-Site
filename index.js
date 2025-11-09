@@ -49,6 +49,8 @@ async function run() {
       res.send(result)
     })
 
+
+
 //  post data
    app.post('/my-accepted-task', async(req,res)=>{
   const data = req.body
@@ -67,8 +69,24 @@ app.delete('/my-accepted-task/:id',async(req,res)=>{
   const result = await acceptCollection.deleteOne({ _id: new ObjectId(id) })
   res.send(result)
 })
-
+  // update
+  app.put('/allJobs/:id',async(req,res)=>{
+    const {id}=req.params
+ 
+    const data = req.body
+    const objectId = new ObjectId(id);
+          const filter = { _id: objectId };
+          const update = {
+            $set: data,
+          };
     
+          const result = await jobsCollection.updateOne(filter, update);
+           
+          res.send(result)
+  })
+    
+
+
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
