@@ -48,7 +48,11 @@ async function run() {
       const result =await acceptCollection.find().toArray()
       res.send(result)
     })
-
+    app.get('/myAddedJob',async(req,res)=>{
+      const email = req.query.email
+      const result=await jobsCollection.find({userEmail:email}).toArray()
+      res.send(result)
+    })
 
 
 //  post data
@@ -69,6 +73,11 @@ app.delete('/my-accepted-task/:id',async(req,res)=>{
   const result = await acceptCollection.deleteOne({ _id: new ObjectId(id) })
   res.send(result)
 })
+app.delete('/deleteJob/:id', async (req, res) => {
+  const { id } = req.params;
+  const result = await jobsCollection.deleteOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
   // update
   app.put('/allJobs/:id',async(req,res)=>{
     const {id}=req.params
@@ -105,5 +114,3 @@ app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
 
-// xVPZ4IPjVPTlokD6
-// freelance-db
