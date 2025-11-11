@@ -70,7 +70,7 @@ async function run() {
       res.send(result)
     })
     app.get('/allJobs',async(req,res)=>{
-      const result = await jobsCollection.find().toArray()
+      const result = await jobsCollection.find().sort({postedAt:-1}).toArray()
       res.send(result)
     })
     app.get('/allJobs/:id',async(req,res)=>{
