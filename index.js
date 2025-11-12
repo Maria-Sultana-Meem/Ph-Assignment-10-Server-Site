@@ -19,7 +19,7 @@ admin.initializeApp({
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.x08ux7h.mongodb.net/?appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -79,10 +79,14 @@ async function run() {
       const result = await jobsCollection.findOne({ _id: objectId })
       res.send(result)
     })
+
     app.get('/my-accepted-task',async(req,res)=>{
       const result =await acceptCollection.find().toArray()
       res.send(result)
     })
+
+   
+
    app.get('/myAddedJob', verifyToken, async (req, res) => {
       try {
         const email = req.user.email;
@@ -117,33 +121,44 @@ async function run() {
       }
     });
 // delete
-app.delete('/my-accepted-task/:id',async(req,res)=>{
+
+
+ app.delete('/deleteJob/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
-  const result = await acceptCollection.deleteOne({ _id: new ObjectId(id) })
-  res.send(result)
-})
+  const email = req.user.email;
+
+  const job = await jobsCollection.findOne({ _id: new ObjectId(id) });
+  if (!job) return res.status(404).send({ message: "Job not found" });
+  if (job.userEmail !== email)
+    return res.status(403).send({ message: "Forbidden: not your job" });
+
+  const result = await jobsCollection.deleteOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
+
+
 app.delete('/deleteJob/:id', async (req, res) => {
   const { id } = req.params;
   const result = await jobsCollection.deleteOne({ _id: new ObjectId(id) });
   res.send(result);
 });
   // update
-  app.put('/allJobs/:id',async(req,res)=>{
-    const {id}=req.params
- 
-    const data = req.body
-    const objectId = new ObjectId(id);
-          const filter = { _id: objectId };
-          const update = {
-            $set: data,
-          };
-    
-          const result = await jobsCollection.updateOne(filter, update);
-           
-          res.send(result)
-  })
-    
 
+  
+    
+    app.put('/allJobs/:id', verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const email = req.user.email;
+
+  const job = await jobsCollection.findOne({ _id: new ObjectId(id) });
+  if (!job) return res.status(404).send({ message: "Job not found" });
+  if (job.userEmail !== email)
+    return res.status(403).send({ message: "Forbidden: not your job" });
+
+  const update = { $set: req.body };
+  const result = await jobsCollection.updateOne({ _id: new ObjectId(id) }, update);
+  res.send(result);
+});
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
