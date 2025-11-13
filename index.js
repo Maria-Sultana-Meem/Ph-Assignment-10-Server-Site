@@ -57,7 +57,7 @@ const verifyToken = async (req, res, next) => {
 async function run() {
   try {
     
-    await client.connect();
+    // await client.connect();
 
    const db = client.db('freelance_db')
     const jobsCollection = db.collection('allJobs')
@@ -80,22 +80,19 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/my-accepted-task',async(req,res)=>{
-      const result =await acceptCollection.find().toArray()
-      res.send(result)
-    })
-
+    app.get('/my-accepted-task', verifyToken, async (req, res) => {
+  const email = req.user.email;
+  const acceptedTasks = await acceptCollection.find({ acceptedBy: email }).sort({ acceptedAt: -1 }).toArray();
+  res.send(acceptedTasks);
+});
    
 
    app.get('/myAddedJob', verifyToken, async (req, res) => {
-      try {
+      
         const email = req.user.email;
-        const result = await jobsCollection.find({ userEmail: email }).toArray();
+        const result = await jobsCollection.find({ userEmail: email }).sort({ postedAt: -1 }) .toArray();
         res.send(result);
-      } catch (error) {
-        console.error(error);
-        res.status(500).send({ message: "Failed to fetch jobs" });
-      }
+      
     });
 
 
@@ -108,17 +105,14 @@ async function run() {
   res.send(result)
 })
   app.post('/addJob', verifyToken, async (req, res) => {
-      try {
+      
         const newJob = req.body;
         newJob.userEmail = req.user.email;
         newJob.postedBy = req.user.name || req.user.email;
         newJob.postedAt = new Date();
         const result = await jobsCollection.insertOne(newJob);
         res.send(result);
-      } catch (error) {
-        console.error(error);
-        res.status(500).send({ message: "Failed to add job" });
-      }
+      
     });
 // delete
 
@@ -137,11 +131,19 @@ async function run() {
 });
 
 
-app.delete('/deleteJob/:id', async (req, res) => {
+app.delete('/my-accepted-task/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
-  const result = await jobsCollection.deleteOne({ _id: new ObjectId(id) });
+  const email = req.user.email;
+
+  const task = await acceptCollection.findOne({ _id: new ObjectId(id) });
+  if (!task) return res.status(404).send({ message: "Task not found" });
+  if (task.acceptedBy !== email)
+    return res.status(403).send({ message: "Forbidden: not your task" });
+
+  const result = await acceptCollection.deleteOne({ _id: new ObjectId(id) });
   res.send(result);
 });
+
   // update
 
   
@@ -160,7 +162,7 @@ app.delete('/deleteJob/:id', async (req, res) => {
   res.send(result);
 });
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
